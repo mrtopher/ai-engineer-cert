@@ -69,6 +69,8 @@ Why is cosine similarity useful for dense vector retrieval?
 
 ##### ✅ Answer:
 
+Cosine similarity is useful because it checks whether two pieces of text point in the same "direction" in meaning, ignoring how long the text is. This matters because that's exactly what you want in search: matching things by what they mean, not by length. It also fits how embedding models are trained, gives clean scores in a fixed range, and runs fast at scale.
+
 ---
 
 ## 🏗️ Activity #2: Build the Vector RAG Pipeline
@@ -88,17 +90,23 @@ Why is metadata important for a RAG application?
 
 ##### ✅ Answer:
 
+Metadata matters in RAG because retrieval based purely on semantic similarity isn't enough on its own. You likely need to know *about* a chunk, not just what it says. Metadata provides capabilities like filtering/scoping, access control and security, etc.
+
 #### ❓Question #3
 
 What tradeoff do we make when choosing chunk size and chunk overlap?
 
 ##### ✅ Answer:
 
+The chunk size controls how much text each vector represents; the overlap keeps nearby context from being lost at chunk boundaries. So smaller chunks give you more precise retrival while more overlap reduces the risk that context gets split across a boundaries. Smaller chunks may reduce mixed-topic chunks but increase total chunk count.
+
 #### ❓Question #4
 
 What does a similarity score help you understand, and what does it not prove by itself?
 
 ##### ✅ Answer:
+
+Similarity score tells you how close things are within an embedding space but is not an indicator as to whether its a quality response to the question or prompt provided.
 
 ---
 
@@ -115,6 +123,8 @@ For the vibe check queries, did the retrieved context seem relevant before gener
 
 ##### ✅ Answer:
 
+Yes, the sources returned shared similarity with the questions and were topic relevant which aided in the models answers.
+
 ---
 
 ## 🏗️ Activity #4: Tune Retrieval
@@ -130,13 +140,16 @@ Document what changed and whether retrieval improved.
 
 ##### Settings Changed:
 
--
+- Chunk size
+- Chunk overlap
+- Retrieval `k`
+- Query wording
 
 ##### Results:
 
-1.
-2.
-3.
+1. Lowered `k` to 2 which reduced noise in query results
+2. Retrieval tuning works best when you align the query with how the source document discusses the topic, not when you make the query more specific about a different subtopic. So changing the query to better aling with the PDF produced better results.
+3. Reduced chunk size and overlap which resulted in higher scores but with tradeoff of more chunks which means more storage and cost.
 
 ---
 
