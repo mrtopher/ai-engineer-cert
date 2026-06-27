@@ -36,6 +36,24 @@ async def list_products(category: str | None = None) -> list[dict]:
 
 
 @mcp.tool()
+async def search_products(query: str) -> list[dict]:
+    """Search the catalog by keyword. Matches the query (case-insensitive) against
+    product names and descriptions."""
+    db = await oauth_provider._get_db()
+    like = f"%{query}%"
+    cursor = await db.execute(
+        "SELECT id, name, description, price, category FROM products "
+        "WHERE name LIKE ? COLLATE NOCASE OR description LIKE ? COLLATE NOCASE",
+        (like, like),
+    )
+    rows = await cursor.fetchall()
+    return [
+        {"id": r[0], "name": r[1], "description": r[2], "price": r[3], "category": r[4]}
+        for r in rows
+    ]
+
+
+@mcp.tool()
 async def get_product(product_id: int) -> dict:
     """Get full details of a single product by its ID."""
     db = await oauth_provider._get_db()
@@ -101,6 +119,37 @@ async def view_cart() -> dict:
     ]
     total = round(sum(i["subtotal"] for i in items), 2)
     return {"items": items, "total": total, "item_count": len(items)}
+
+
+@mcp.tool()
+async def update_cart_quantity(product_id: int, quantity: int) -> dict:
+    """Set the exact quantity of an item already in your cart. A quantity of 0 or
+    less removes the item entirely."""
+    username = await _get_username()
+    db = await oauth_provider._get_db()
+
+    cursor = await db.execute(
+        "SELECT quantity FROM cart_items WHERE username = ? AND product_id = ?",
+        (username, product_id),
+    )
+    row = await cursor.fetchone()
+    if row is None:
+        return {"error": "Item not in cart"}
+
+    if quantity <= 0:
+        await db.execute(
+            "DELETE FROM cart_items WHERE username = ? AND product_id = ?",
+            (username, product_id),
+        )
+        await db.commit()
+        return {"success": True, "message": "Item removed from cart (quantity set to 0)"}
+
+    await db.execute(
+        "UPDATE cart_items SET quantity = ? WHERE username = ? AND product_id = ?",
+        (quantity, username, product_id),
+    )
+    await db.commit()
+    return {"success": True, "message": f"Updated quantity to {quantity}"}
 
 
 @mcp.tool()
