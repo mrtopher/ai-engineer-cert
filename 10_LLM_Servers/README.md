@@ -83,7 +83,9 @@ What is the difference between serverless and dedicated endpoints?
 
 #### ✅ Answer:
 
-_(insert your answer here)_
+Serverless endpoints are shared, pay-per-token infrastructure — you send requests to a common pool of hardware, pay only for what you use, and never manage capacity. They're cheap and instant to start, but you compete with other users for GPUs, so latency and throughput can vary and you may hit rate limits under load.
+
+Dedicated endpoints reserve GPU capacity exclusively for you. You pay for the running instance by time (whether or not it's busy), and in exchange get predictable, consistent latency/throughput, no noisy neighbors, and the ability to serve high or steady traffic. The trade-off is higher cost and the responsibility to shut it down when idle.
 
 ### ❓ Question #2:
 
@@ -91,7 +93,7 @@ Why is it important to consider token throughput and latency when choosing an LL
 
 #### ✅ Answer:
 
-_(insert your answer here)_
+Latency (especially time-to-first-token) determines how responsive the app *feels* — users perceive delays over a few seconds as broken or slow, which hurts engagement and retention. Throughput (tokens per second) governs how fast a full response streams in and how many concurrent users you can serve before responses back up. A more capable model that answers slowly can deliver a worse experience than a slightly weaker but faster one.
 
 ## Activity 1: RAGAS Evaluation with Cost Analysis
 
