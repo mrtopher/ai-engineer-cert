@@ -442,6 +442,29 @@ Anything shipped to the browser is publicly readable — view-source, the networ
 
 Build an `agent_with_helpfulness` graph that adds a post-response helpfulness check: after the agent answers, a judge model decides whether the response is helpful, and if not, the graph loops back for another attempt (with a safe loop limit). Register it in `langgraph.json`, deploy it, then compare LangSmith traces for queries that pass vs. fail the helpfulness check. Does the retry loop behave differently in Studio vs. production?
 
+#### Implementation
+
+The graph lives in [`app/graphs/agent_with_helpfulness.py`](app/graphs/agent_with_helpfulness.py) and is registered in [`langgraph.json`](langgraph.json) under the graph id `agent_with_helpfulness` (assistant id `helpful_agent`). Instead of the prebuilt `create_agent` used by `simple_agent`, it drops down to the raw `StateGraph` API so a judge step can be inserted into the control flow:
+
+```text
+START → agent ──(tool_calls?)──> action → agent          (normal ReAct tool loop)
+              └──(no tools)────> helpfulness ──(helpful OR loop cap hit?)──> END
+                                             └──(not helpful)────────────> agent  (retry)
+```
+
+- **`agent`** invokes a tool-bound model, prepending the cat-health system prompt.
+- **`action`** is a `ToolNode` that runs any requested tools, then returns to `agent`.
+- **`helpfulness`** uses a separate, tool-free judge model that compares the *original* user query against the *latest* answer and emits a single `Y`/`N` verdict. It records the verdict as a named marker message and increments a `loop_count` field on the state.
+- Two conditional edges route the flow: `route_after_agent` (tools vs. judge) and `route_after_helpfulness` (end vs. retry).
+- **Safety loop limit:** `MAX_HELPFULNESS_LOOPS = 3`. Without it, a judge that never approves would loop until LangGraph's default `recursion_limit` throws a `GraphRecursionError` (a user-facing 500). The cap makes the graph return its best answer after N attempts instead of failing or looping forever. This was verified by forcing every verdict to `N` — the graph ran exactly 3 helpfulness checks and terminated.
+
+#### Studio vs. production
+
+The graph is identical in both places — Studio and the deployed LangSmith API stream the same events from the same compiled graph — so the *retry logic* behaves the same. What differs is the surrounding execution context:
+
+- **Studio** is a debugging surface: single-user, no concurrency, and you can fork a thread at the `helpfulness` node to replay the retry branch, step through each loop, and inspect the judge's verdict before it routes. It's the fastest way to *see* a pass vs. fail path.
+- **Production** (LangSmith deployment) runs behind the Agent Server API with persistence and concurrency. A query that *passes* the check produces a short trace (agent → [tools] → helpfulness → END, `loop_count=1`); a query that *fails* produces a longer trace with repeated `agent → helpfulness` cycles up to the cap, higher latency, and more token cost — all visible per-run in LangSmith tracing. The extra loops are exactly where production observability earns its keep: you can spot queries that consistently trip the judge and burn retries.
+
 ## Advanced Activity: Auth and Custom Routes
 
 Research [LangSmith Deployments custom routes](https://github.com/langchain-samples/lsd-custom-route-react-ui) and describe how you could add authentication so each user only sees their own threads. Optionally implement a simple auth gate on your Vercel frontend.
