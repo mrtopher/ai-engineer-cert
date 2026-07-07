@@ -83,7 +83,9 @@ What is the difference between serverless and dedicated endpoints?
 
 #### ✅ Answer:
 
-_(insert your answer here)_
+Serverless endpoints are shared, pay-per-token infrastructure — you send requests to a common pool of hardware, pay only for what you use, and never manage capacity. They're cheap and instant to start, but you compete with other users for GPUs, so latency and throughput can vary and you may hit rate limits under load.
+
+Dedicated endpoints reserve GPU capacity exclusively for you. You pay for the running instance by time (whether or not it's busy), and in exchange get predictable, consistent latency/throughput, no noisy neighbors, and the ability to serve high or steady traffic. The trade-off is higher cost and the responsibility to shut it down when idle.
 
 ### ❓ Question #2:
 
@@ -91,13 +93,15 @@ Why is it important to consider token throughput and latency when choosing an LL
 
 #### ✅ Answer:
 
-_(insert your answer here)_
+Latency (especially time-to-first-token) determines how responsive the app *feels* — users perceive delays over a few seconds as broken or slow, which hurts engagement and retention. Throughput (tokens per second) governs how fast a full response streams in and how many concurrent users you can serve before responses back up. A more capable model that answers slowly can deliver a worse experience than a slightly weaker but faster one.
 
 ## Activity 1: RAGAS Evaluation with Cost Analysis
 
 Use RAGAS to evaluate your open-source Fireworks AI powered RAG app against an OpenAI `gpt-4.1-mini` powered equivalent. Compare retrieval quality, answer faithfulness, and end-to-end accuracy across both providers.
 
 Additionally, instrument both pipelines with **LangSmith** to capture token usage and cost per query. Use LangSmith's tracing and cost dashboards to compare the total cost of running each provider at scale. Include your evaluation results, cost breakdown, and analysis in your Loom video.
+
+> ✅ **My solution:** see [`ragas_cost_analysis.ipynb`](./ragas_cost_analysis.ipynb) — a RAGAS evaluation of the Fireworks `gpt-oss` RAG against an OpenAI `gpt-4.1-mini` equivalent (retrieval quality, faithfulness, factual correctness), with LangSmith tracing and a per-query cost comparison.
 
 ## Advanced Activity: Local Models
 

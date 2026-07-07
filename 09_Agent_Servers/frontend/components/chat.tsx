@@ -21,7 +21,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { getMessageText, toolLabel } from "@/lib/messages";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+// The LangGraph SDK wraps requests in `new URL(apiUrl + path)`, which requires
+// an ABSOLUTE url — a relative "/api" throws "Failed to construct 'URL'".
+// Prefer an explicit env var; otherwise derive an absolute url from the
+// browser origin so it works on any domain (Vercel, previews, localhost).
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (typeof window !== "undefined" ? `${window.location.origin}/api` : "/api");
 
 type StreamMessage = ReturnType<typeof useStream>["messages"][number];
 
