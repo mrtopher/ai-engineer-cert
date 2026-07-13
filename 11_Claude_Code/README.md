@@ -66,7 +66,13 @@ While scaffolding in Task 3 you used **plan mode** before letting Claude Code wr
 
 #### ✅ Answer
 
-_(insert your answer here)_
+A shell-capable agent can take irreversible, high-blast-radius actions (delete files, push
+code, install packages) — the permission system is the gate that stops a wrong guess from
+becoming damage, since most shell effects have no undo. Plan mode matters most on an empty
+directory because there's no existing code to constrain the agent's assumptions: it forces
+alignment on stack, structure, and approach *before* any files exist, so wrong choices (e.g.
+Express vs. FastAPI, project layout) are corrected when they're free to change rather than
+after a scaffold is committed.
 
 ### ❓ Question #2
 
@@ -74,7 +80,12 @@ _(insert your answer here)_
 
 #### ✅ Answer
 
-_(insert your answer here)_
+It should hold durable, project-wide knowledge the agent needs every session: architecture,
+key file paths, run commands, conventions, and gotchas (our ESM `.js` imports, the snake_case
+wire format, the `chat.ts` seam). It should *not* hold transient session state, secrets, or
+detail the agent can just read from the code. This is the Session 3 memory lesson applied:
+context is a scarce budget, so you persist only high-signal, stable facts (long-term memory)
+and let everything else be retrieved on demand instead of stuffed into the window.
 
 ### ❓ Question #3
 
@@ -82,7 +93,12 @@ The Agent SDK gives you the same agent loop that powers Claude Code. Compare thi
 
 #### ✅ Answer
 
-_(insert your answer here)_
+Free: a battle-tested agent loop (tool-calling, retries, error handling), production tools
+(Read/Glob/Grep/Bash…), a permission system + hooks, automatic context compaction, and
+session persistence + MCP support. Given up: fine-grained control over each loop iteration,
+arbitrary graph topologies and custom state machines (no LangGraph-style branching), and
+model-provider choice (Claude only). Net trade — far less plumbing for less control: you
+configure behavior through an options object instead of wiring nodes and edges yourself.
 
 ### ❓ Question #4
 
@@ -90,7 +106,14 @@ Your chat app could have called a chat completions API directly, the way you did
 
 #### ✅ Answer
 
-_(insert your answer here)_
+Gain: the model can actually *act* — read files, search, call tools — and ground answers in
+the real repo instead of hallucinating, with the loop, memory, and tool orchestration handled
+for you. New risk: a tool-using agent can cause real side effects (read sensitive files,
+write, run shell) driven by untrusted user input, with no human at the keyboard on a server.
+We addressed it structurally: a read-only allowlist (`Read`/`Glob`/`Grep` plus a
+path-confined `count_lines` — no Write/Edit/Bash) means the agent cannot mutate the
+filesystem no matter what a user types, and `maxTurns: 25` bounds runaway loops and cost. On
+a server the allowlist *is* the permission gate that replaces the human "approve" click.
 
 ## Activity 1: Level Up the Chat App
 
