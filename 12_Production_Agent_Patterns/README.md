@@ -65,7 +65,9 @@ In `01_Cat_Health_Agent_Guardrails.ipynb`, input rails run in a specific order: 
 
 #### ✅ Answer
 
-_(insert your answer here)_
+Deterministic checks run first because they are cheap, fast, and can't be manipulated by the input itself. Emergencies must escalate before anything else can delay them; injection must be caught *before* untrusted text reaches an LLM (including the topical guard), or the attacker could subvert that guard too; and PII should be redacted before the text is sent to any model or logged. The model-based guard runs last as the most expensive and least reliable layer, and only on input that already survived the hard rails — this is cheapest-and-safest-first, fail-fast ordering.
+
+The rails return `escalate` / `block` / `rewrite` instead of a boolean because each risk needs a *different response*, and a pass/fail flag throws that information away. An emergency isn't "fail," it's "route to a human now"; injection is "reject"; PII is "sanitize and continue." A typed decision lets the agent loop take the correct action per case and stay auditable, rather than collapsing distinct safety outcomes into one blunt reject.
 
 ### ❓ Question #2
 
@@ -73,7 +75,9 @@ In `02_Cat_Health_Agent_Caching.ipynb`, a semantic cache can serve a paraphrased
 
 #### ✅ Answer
 
-_(insert your answer here)_
+A threshold can't fix it because embedding similarity measures *surface/topical* closeness, not clinical meaning. "Can cats eat X as a treat?" and "Is X a poison for cats?" are lexically and topically near-identical — same words, same subject — so they sit close in embedding space even though the correct answers are opposites. There's no threshold that separates them without also rejecting the genuine paraphrases the cache exists to catch: tighten it and you lose all the benefit, loosen it and you serve the dangerous hit. The distinction lives in semantics the embedding doesn't encode.
+
+For high-stakes queries a production health agent should not rely on semantic caching at all. Classify risk first and route accordingly: safe general FAQs can use the semantic cache, but anything safety-critical (toxicity, dosing, symptoms, emergencies) should bypass it and always go to a fresh model call — or fall back to exact-match caching only, where a cache key is a literal string and can't collapse "treat" into "poison." Cache the cheap-to-be-wrong; never cache where a wrong answer harms the cat.
 
 ## Submitting Your Homework
 
